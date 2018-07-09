@@ -1,4 +1,4 @@
-/*LCD菜单，通过LCD显示操作项目，通过上、下、确定三个按钮完成操作*/
+/*LCD菜单，通过LCD显示操作项目，通过上、下、确定三个按钮完成操作。有主菜单和温湿度、灯光，风扇、灯光表演四个分页面*/
 #include <dht11.h>
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(4,6,7,8,9,10);
@@ -9,12 +9,12 @@ int f_down=HIGH;
 int f_enter=HIGH;        //存储上下、确定三个按钮的之前状态，用于判断按钮按下
 //事件
 
-int state=0;             //记录当前工作内容，0菜单，1温度显示，2灯，3风扇，4灯光变换
+int state=0;             //记录当前工作内容，0菜单，1温度显示，2灯，3风扇，4灯光表演
 
 int light_mode=0;        //记录灯光状态，分别对应0至三个灯亮
 int wind_mode=0;         //记录风扇状态
 
-int place=0;            //存储光标绝对位置（对应选项）
+int place=0;            //存储光标绝对位置（对应主菜单选项）
 int relative_place=0;    //存储光标相对位置（屏幕上位置）
 
 char*menu[]={"temperature","light","wind","light show"};
@@ -63,7 +63,7 @@ void show_menu()            //菜单上的光标移动及选项显示
 
 
 
-void show_temperature()      //显示温湿度
+void show_temperature()      //显示温湿度，DHT11信号引脚在0号口
 {
   DHT.read(0);
   state=1;
@@ -108,6 +108,8 @@ void wind()           //显示并修改风扇转动状态
 
 void lightshow()         //一段灯光变换
 {
+  lcd.setCursor(0,0);
+  lcd.print("enjoy!");
   digitalWrite(11,LOW);
   digitalWrite(12,LOW);
   digitalWrite(13,LOW);
