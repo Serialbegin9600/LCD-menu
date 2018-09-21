@@ -23,73 +23,96 @@ int types[3][3]={
 
 void initial()                //初始化函数，打印启动界面，初始数据
 {
-  for(int i=0;i<3;i++)         //清空记录
-  {
-    total_times[i]=0;
-    miss_times[i]=0;
-  }
+  Serial.println("initial");
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("training partner");
+  lcd.print("Training partner");
   lcd.setCursor(0,1);
   lcd.print("for boxing");
   delay(1000);
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("    welcome    ");
+  lcd.print("    Welcome    ");
   lcd.setCursor(0,1);
   for(int i=0;i<16;i++)
   {
     lcd.print(">");
-    delay(100);
+    delay(200);
   }
-  menu();
 }
 
 
 void menu()          //主菜单，1为训练，2为看分，3为设置难度
 {
+  Serial.println("menu");
   state=0;
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("1.train 2.score");
+  lcd.print("1.Train 2.Score");
   lcd.setCursor(0,1);
-  lcd.print("3.set");  
+  lcd.print("3.Set");  
 }
 
 
 
 void training_initial()          //训练状态初始，打印开始界面
 {
+  Serial.println("Training initial");
+  for(int i=0;i<3;i++)         //清空记录
+  {
+    total_times[i]=0;
+    miss_times[i]=0;
+  }
   state=1;
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("training in");
+  lcd.print("Training in");
   lcd.setCursor(0,1);
   lcd.print("level ");
   lcd.print(level);
-  delay(1000);
+  delay(2000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("     Ready?");
   lcd.setCursor(0,1);
-  delay(500);
+  delay(1000);
   lcd.print("     GO !");
-  delay(500);
+  delay(1000);
+  flash();
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("training...");     //进入训练进行中界面
+  lcd.print("Training...");     //进入训练进行中界面
   lcd.setCursor(0,1);
+  
+}
+void flash()                      //LED闪烁，用于提示训练的开始和结束
+{
+  Serial.println("flash");
+  for(int i=0;i<3;i++)
+  {
+    for(int j=0;j<3;j++)
+    {
+      digitalWrite(leds[j],HIGH);
+    }
+    delay(300);
+    for(int j=0;j<3;j++)
+    {
+      digitalWrite(leds[j],LOW);
+    }
+    delay(300);
+  }
 }
 int check_hit(int n)           //亮灯，每10毫秒检测一次是否击中，若击中则返回时间并灭灯，1秒后自动结束
 {
+  Serial.println("check hit");
   int hit_time=0;
   digitalWrite(leds[n],HIGH);
-  for(int i=0;i<100;i++)
+  Serial.println("HIT !!!");
+  for(int i=0;i<200;i++)
   {
+    hit_time+=10;
     if(digitalRead(buttons[n])==LOW)
     {
-      hit_time=i*10;
       break;
     }
     delay(10);
@@ -99,6 +122,7 @@ int check_hit(int n)           //亮灯，每10毫秒检测一次是否击中，
 }
 void training()                //训练过程主函数，调用初始化函数，生成随机动作并检测其完成，结束后进入打分界面
 {
+  Serial.println("training");
   state=1;
   training_initial();
   int type=0;                      //哪个靶亮起
@@ -106,16 +130,23 @@ void training()                //训练过程主函数，调用初始化函数�
   for(int i=0;i<8;i++)     //8个动作
   {
     type=random(0,3);               //随机选定一个组合
+    Serial.print("type=");
+    Serial.println(type);
     for(int j=0;j<3;j++)                  //逐个执行该组合中的动作
     {
+      Serial.print("action=");
+      Serial.println(types[type][j]);
       hit_time=check_hit(types[type][j]);
-      if(hit_time==0)                     //没有检测到击中，退出此组合
+      Serial.print("time");
+      Serial.println(hit_time);
+      if(hit_time==2000)                     //没有检测到击中，退出此组合
       {
         break;
       }
-      if(hit_time>(1000-100*level))
+      else if(hit_time>(1500-300*level))
       {
         miss_times[types[type][j]]+=1;    //此动作未在额定时间内击中次数加一
+        Serial.println("MISSED  !!!");
       }
       total_times[types[type][j]]+=1;    //此动作总数加一
       delay(500-100*level);              //组合内动作间间隔
@@ -123,6 +154,7 @@ void training()                //训练过程主函数，调用初始化函数�
     delay(2000-500*level);              //组间间隔
     lcd.print(">>");                      //打印进度条
   }
+  flash();
   show_score();
 }
 
@@ -134,6 +166,7 @@ void training()                //训练过程主函数，调用初始化函数�
 
 void show_score()                       //显示分数初始界面，完成后自动进入显示界面1
 {
+  Serial.println("show score");
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("calculating...");
@@ -141,25 +174,31 @@ void show_score()                       //显示分数初始界面，完成后�
   for(int i=0;i<16;i++)
   {
     lcd.print(">");
-    delay(50);
+    delay(200);
   }
   score1();
 }
 void score1()                 //显示界面1，右键翻页，中键退出
 {
+  Serial.println("score1");
   state=2;
+  Serial.print("miss hits");
+  Serial.println(miss_times[0]+miss_times[1]+miss_times[2]);
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("miss hits");
+  lcd.print("overtime hits");
   lcd.setCursor(0,1);
   lcd.print("total:");
   lcd.print(miss_times[0]+miss_times[1]+miss_times[2]);
   lcd.print("in");
-  lcd.print("24");
+  lcd.print(total_times[0]+total_times[1]+total_times[2]);
 }
 void score2()            //显示界面2，左键翻页，中键退出
 {
+  Serial.println("score2");
   state=3;
+  Serial.print("swing");
+  Serial.println(miss_times[0]+miss_times[2]);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("punch:");
@@ -168,15 +207,16 @@ void score2()            //显示界面2，左键翻页，中键退出
   lcd.print(total_times[1]);
   lcd.setCursor(0,1);
   lcd.print("swing:");
-  lcd.print(miss_times[0]+miss_times[3]);
+  lcd.print(miss_times[0]+miss_times[2]);
   lcd.print("in");
-  lcd.print(total_times[0]+total_times[3]);
+  lcd.print(total_times[0]+total_times[2]);
 }
 
 
 
 void set()        //设置界面，1、3键调节难度值，2退出界面
 {
+  Serial.println("set");
   state=4;
   lcd.clear();
   lcd.setCursor(0,0);
@@ -186,6 +226,8 @@ void set()        //设置界面，1、3键调节难度值，2退出界面
 }
 void change_level(int n)      //改变难度值，n为1难度下降，n为3上升
 {
+  Serial.print("change level");
+  Serial.println(n);
   if(level!=1&&n==1)
   {
     level--;
@@ -194,6 +236,8 @@ void change_level(int n)      //改变难度值，n为1难度下降，n为3上�
   {
     level++;
   }
+  Serial.print("level");
+  Serial.println(level);
   set();
 }
 
@@ -239,16 +283,28 @@ void setup() {
 }
 
 void loop() {
+  /*delay(5000);               //lcd效果调试程序
+  training_initial();
+  show_score();
+  score1();
+  delay(5000);
+  score2();
+  delay(5000);
+  set();
+  change_level(3);
+  delay(5000);
+  menu();
+  delay(5000);*/
   int pressed=read_button();
   if(pressed==1)              //左键，若在菜单进入训练，显示界面一不动，界面2翻到界面1，设置难度下降（传递1）
   {
-    if(state==1)
+    if(state==0)
     {
       training();
     }
     else if(state==3)
     {
-      score2();
+      score1();
     }
     else if(state==4)
     {
@@ -259,9 +315,9 @@ void loop() {
 
   else if(pressed==2)              //中键，若在菜单进入显示初始化，显示界面退到菜单，设置难度退回菜单
   {
-    if(state==1)
+    if(state==0)
     {
-      show_score();
+      score1();
     }
     else
     {
@@ -273,7 +329,7 @@ void loop() {
 
   else if(pressed==3)              //右键，若在菜单进入设置，显示界面一翻到2，界面2不动，设置难度上升（传递3）
   {
-    if(state==1)
+    if(state==0)
     {
       set();
     }
@@ -286,5 +342,5 @@ void loop() {
       change_level(3);
     }
   }
-
+  delay(10);
 }
